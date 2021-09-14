@@ -106,3 +106,75 @@ ai_quotes = [
                     "transportation, communication, manufacturing."
     }
 ]
+
+# "Quote" class below determine the operation of the endpoints of API.
+# the class will define four methods (GET = Read, POST = Create, PUT = Update, DELETE = Delete)
+
+class Quote(Resource):
+
+    #GET method will get a spesific quote or get a random quote if the id is not specified
+    def get(self, id=0):
+        if id == 0:
+            return random.choice(ai_quotes), 200
+        
+        for quote in ai_quotes:
+            if(quote["id"]) == id:
+                return quote, 200
+            return "Quote Not Found", 404
+
+    # POST method will receive identifier of the new quote at the input field.
+    # POST will use "reqparse" to parse the parameters, and can create a new quote to the database (dictionary)
+    def post(self, id):
+        parser = reqparse.RequestParser()
+        parser.add_argument("author")
+        parser.add_argument("quote")
+        params = parser.parse_args()
+
+        for quote in ai_quotes:
+            if(id == quote["id"]):
+                return f"Quote with id {id} already exists", 400
+        
+        quote = {
+            "id": int(id),
+            "author": params["author"],
+            "quote": params["quote"]
+        }
+
+        ai_quotes.append(quote)
+        return quote, 201
+    
+    # Similarly, PUT method takes id at the input and then parses the quote parameters using reqparse.
+    # PUT method will update the quote that exists in the database
+    def put(self, id):
+        parser = reqparse.RequestParser()
+        parser.add_argument("author")
+        parser.add_argument("quote")
+        params = parser.parse_args()
+
+        for quote in ai_quotes:
+            if(id == quote["id"]):
+                quote["author"] = params["author"]
+                quote["quote"] = params["quote"]
+                return quote, 200
+        
+        quote = {
+            "id": int(id),
+            "author": params["author"],
+            "quote": params["quote"]
+        }
+
+        ai_quotes.append(quote)
+        return quote, 201
+
+    # DELETE method receives the quote id at the input and updates the ai_quotes list through globa scope using list comprehension
+    def delete(self, id):
+        global ai_quotes
+        ai_quotes = [quote for quote in ai_quotes if quote["id"] != id]
+        return f"Quote with id {id} is deleted", 200
+
+
+# add a resources to our API
+api.add_resource(Quote, "/ai-quotes", "/ai-quotes", "/ai-quotes/<int:id>")
+
+if __name__ == "__main__":
+    app.run(debug=True)
